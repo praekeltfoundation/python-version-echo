@@ -1,0 +1,38 @@
+sudo: required
+services:
+  - docker
+language: python
+python: '3.6'
+
+env:
+  global:
+    - REGISTRY_USER=praekeltorgdeploy
+    - secure: "Ut+F+OkTS5CxYGZaNNww+CbZtHYI5fCLJL0tX4oKdGlcv4zX5Jp9KlOwVTR2k/bIK3eCcNWh79Hkzk/xgPzDlSRLv0CPJo7fXuEnjTiKuM8puX7zGOTxqp9qMGf50pq6Ly1TK8C5cgeQc1ddebsFgyRwd/Unh1N/9Y6LrQ5x3gVcS1H0kjcqYNQts8F/3OGPd1lpuXP3uftRc3of6LJRiW3NQs1GKrSbab9O3r1Dk3dkYfQeFNDowI+nKv2045ytDmkqhhgFVG8O1Nk8GL7zlRVqJjs51B717Kx8laTG0kveoXk9ZBCIn+3bwhUN36CHgkuHPNhA52tywkuC93EPciW9lhgJh0odAxNWm9d+R6f8dSRHYLPqVLxQFoPM/ORIVzW3MxKgovw0hT2rTV5cuf730dVTow8hW0UdceKoBfH/fQz6AT6PEiYFSpn8hlOc0dNBkWMKUPDOlTG2Fy7FZKP4/ZFJviucJKwOP6DmyRG86wGNrS6UiKnaZXfJjiSCM5EiHSTDZCIbb4OL29aTXcwd/6dttnPRm1asqLsQeesUXdA43WhS5Nm+QfnsPx8ZirU8oPGFHyQA48eqsLd7TNPuhPyDUP+7eOmjn8omfIS1EaBj5N4iV37DNI9CWsnE6C9NfNnJRgC1hf0eQnAfbd+tFrz+QxoTAJLpbqO1yYQ="
+  matrix:
+    - VERSION="" TAG_LATEST=1 REPO="praekeltfoundation/python-version-echo"
+
+# Update Docker Engine and Compose
+before_install:
+  - sudo apt-get update
+  - sudo apt-get install -qy -o Dpkg::Options::="--force-confold" docker-ce
+
+before_script:
+  - LATEST_TAG=$(curl -s https://api.github.com/repos/$REPO/tags | jq -r '.[0].name')
+  - VERSION=${VERSION:-$LATEST_TAG}
+  - image="praekeltfoundation/python-version-echo"
+  # Fetch existing image to use as cache
+  - docker pull "$image"
+script:
+  - docker build --pull --cache-from "$image" --tag "$image" .
+
+after_script:
+  - docker images
+
+before_deploy:
+  - pip install docker-ci-deploy==0.3.0
+  - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASS"
+deploy:
+  provider: script
+  script: dcd --version $VERSION ${TAG_LATEST:+--version-latest} -- "$image"
+  on:
+    tags: true
