@@ -3,7 +3,7 @@ from apistar import environment, typesystem
 from apistar.frameworks.wsgi import WSGIApp as App
 
 
-__version__ = '0.0.6'
+__version__ = '0.0.7'
 VERSION = __version__
 
 
