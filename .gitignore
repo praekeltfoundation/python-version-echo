@@ -26,6 +26,7 @@ lib64
 logs/*.log
 *.pid
 .DS_Store
+.vscode
 
 # Distribution / packaging
 .Python
